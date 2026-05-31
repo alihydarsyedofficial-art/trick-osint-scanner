@@ -18,6 +18,7 @@
 <body class="min-h-screen p-4 md:p-8 hacker-bg">
 
     <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
         <div class="glass rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
                 <h1 class="text-2xl md:text-3xl font-black neon-text"><i class="fa-solid fa-satellite-dish"></i> TAKEDOWN AUTOMATION ENGINE</h1>
@@ -28,9 +29,10 @@
             </div>
         </div>
 
+        <!-- Scanner Input -->
         <div class="glass rounded-2xl p-6">
             <form id="scanForm" class="flex flex-col md:flex-row gap-4">
-                <input type="text" id="url" required placeholder="Enter Target (e.g., tfxltd.com)" 
+                <input type="text" id="url" required placeholder="Enter Target (e.g., https://tfxltd.com/)" 
                     class="w-full bg-[#090e17] border border-slate-700 text-[#00ffcc] text-lg rounded-xl px-6 py-3 focus:outline-none focus:border-[#00ffcc]">
                 <button type="submit" id="btn" class="bg-[#00ffcc] text-[#030712] font-bold py-3 px-8 rounded-xl hover:bg-white transition-all whitespace-nowrap">
                     <i class="fa-solid fa-radar" id="btnIcon"></i> <span id="btnText">EXECUTE SCAN</span>
@@ -38,8 +40,10 @@
             </form>
         </div>
 
+        <!-- Results Area -->
         <div id="resultsWrapper" class="hidden space-y-6">
             
+            <!-- Target Data for PDF -->
             <div id="pdfContent" class="space-y-4 p-6 rounded-2xl border border-slate-700 glass">
                 <h2 class="text-xl font-bold text-sky-400 border-b border-slate-600 pb-2">Target OSINT Data</h2>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -50,6 +54,7 @@
                 </div>
             </div>
 
+            <!-- Auto Takedown Automation Section -->
             <div class="glass rounded-2xl p-6 border border-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.1)]">
                 <h2 class="text-xl font-black text-rose-500 border-b border-rose-900 pb-3 mb-4"><i class="fa-solid fa-fire"></i> AUTOMATED TAKEDOWN REPORTING</h2>
                 
@@ -76,7 +81,11 @@
     <script>
         document.getElementById('scanForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const target = document.getElementById('url').value;
+            
+            // স্মার্ট ডোমেইন এক্সট্রাক্টর: https:// বা শেষের / অটোমেটিক রিমুভ করবে
+            let rawTarget = document.getElementById('url').value.trim();
+            const target = rawTarget.replace(/^(?:https?:\/\/)?(?:www\.)?/i, "").split('/')[0].split('?')[0];
+            
             const btn = document.getElementById('btn'), text = document.getElementById('btnText'), icon = document.getElementById('btnIcon');
             
             document.getElementById('resultsWrapper').classList.add('hidden');
@@ -85,41 +94,57 @@
             const formData = new URLSearchParams(); formData.append('url', target);
 
             try {
+                // Vercel ব্যাকএন্ড API কল
                 const res = await fetch('/api/scan.php', { method: 'POST', body: formData });
-                const data = await res.json();
+                const rawText = await res.text(); // JSON এর বদলে Text হিসেবে ধরছি যাতে Error দেখা যায়
+                
+                try {
+                    const data = JSON.parse(rawText);
 
-                if (data.status === 'success') {
-                    // Populate OSINT Data
-                    document.getElementById('rTarget').innerText = data.target;
-                    document.getElementById('rIp').innerText = data.ip;
-                    document.getElementById('rIsp').innerText = data.geo.isp;
-                    document.getElementById('rWaf').innerText = data.cloudflare;
-                    
-                    // Generate Auto Abuse Legal Payload
-                    const today = new Date().toISOString().split('T')[0];
-                    const payloadText = `URGENT LEGAL NOTICE: Phishing & Cyber Abuse Report\nDate: ${today}\n\nTo the Abuse/Legal Department of ${data.geo.isp},\n\nI am contacting you on behalf of TRICK A4IF Cyber Community. We have identified that a domain hosted on your infrastructure is engaged in malicious phishing and brand impersonation.\n\n--- TARGET INFRASTRUCTURE ---\nMalicious Domain: ${data.target}\nOrigin Server IP: ${data.ip}\nFirewall/WAF: ${data.cloudflare}\nGeo-Location: ${data.geo.city}, ${data.geo.country}\n\n--- REQUIRED ACTION ---\nUnder the Digital Millennium Copyright Act (DMCA) and universal anti-phishing regulations, we formally request the immediate suspension and takedown of this domain/IP from your network to prevent further harm to users.\n\nPlease confirm upon the suspension of the account.\n\nSincerely,\nMohammad Mujahidul Islam\nCEO, TRICK A4IF Cyber Community\nContact: abuse-team@trick-a4if.org`;
-                    
-                    document.getElementById('abusePayload').value = payloadText;
-                    
-                    // Set Mailto Action
-                    const abuseEmail = `abuse@${data.target}, admin@${data.target}, hostmaster@${data.target}`;
-                    const subject = encodeURIComponent(`URGENT: Phishing Takedown Notice for ${data.target}`);
-                    const body = encodeURIComponent(payloadText);
-                    
-                    document.getElementById('fireReportBtn').onclick = function() {
-                        window.location.href = `mailto:${abuseEmail}?subject=${subject}&body=${body}`;
-                    };
+                    if (data.status === 'success') {
+                        // OSINT ডেটা বসাচ্ছে
+                        document.getElementById('rTarget').innerText = data.target;
+                        document.getElementById('rIp').innerText = data.ip;
+                        document.getElementById('rIsp').innerText = data.geo.isp || 'Unknown';
+                        document.getElementById('rWaf').innerText = data.cloudflare;
+                        
+                        // অটো অ্যাবিউজ লিগ্যাল মেসেজ তৈরি
+                        const today = new Date().toISOString().split('T')[0];
+                        const payloadText = `URGENT LEGAL NOTICE: Phishing & Cyber Abuse Report\nDate: ${today}\n\nTo the Abuse/Legal Department of ${data.geo.isp || 'the Hosting Provider'},\n\nI am contacting you on behalf of TRICK A4IF Cyber Community. We have identified that a domain hosted on your infrastructure is engaged in malicious phishing and brand impersonation.\n\n--- TARGET INFRASTRUCTURE ---\nMalicious Domain: ${data.target}\nOrigin Server IP: ${data.ip}\nFirewall/WAF: ${data.cloudflare}\nGeo-Location: ${data.geo.city || 'Unknown'}, ${data.geo.country || 'Unknown'}\n\n--- REQUIRED ACTION ---\nUnder the Digital Millennium Copyright Act (DMCA) and universal anti-phishing regulations, we formally request the immediate suspension and takedown of this domain/IP from your network to prevent further harm to users.\n\nPlease confirm upon the suspension of the account.\n\nSincerely,\nMohammad Mujahidul Islam\nCEO, TRICK A4IF Cyber Community\nContact: abuse-team@trick-a4if.org`;
+                        
+                        document.getElementById('abusePayload').value = payloadText;
+                        
+                        // Mailto বাটনের অ্যাকশন সেট করা
+                        const abuseEmail = `abuse@${data.target}, admin@${data.target}, hostmaster@${data.target}`;
+                        const subject = encodeURIComponent(`URGENT: Phishing Takedown Notice for ${data.target}`);
+                        const body = encodeURIComponent(payloadText);
+                        
+                        document.getElementById('fireReportBtn').onclick = function() {
+                            window.location.href = `mailto:${abuseEmail}?subject=${subject}&body=${body}`;
+                        };
 
-                    document.getElementById('resultsWrapper').classList.remove('hidden');
-                } else { alert(`Error: ${data.message}`); }
-            } catch (err) { alert('Network Error. Backend offline.'); } 
-            finally { btn.disabled = false; text.innerText = 'EXECUTE SCAN'; icon.className = 'fa-solid fa-radar'; }
+                        document.getElementById('resultsWrapper').classList.remove('hidden');
+                    } else { 
+                        alert(`SCAN FAILED: ${data.message}`); 
+                    }
+                } catch (jsonErr) {
+                    // যদি 500 Error বা HTML পেজ আসে, সেটা এখানে ধরবে
+                    console.error(rawText);
+                    alert(`Vercel Server Error: ব্যাকএন্ড থেকে সঠিক ডেটা আসেনি। ব্রাউজার কনসোল চেক করুন।\n\nError snippet: ${rawText.substring(0, 100)}...`);
+                }
+            } catch (err) { 
+                alert('Network Error: Check your internet connection or Vercel backend deployment.'); 
+            } finally { 
+                btn.disabled = false; text.innerText = 'EXECUTE SCAN'; icon.className = 'fa-solid fa-radar'; 
+            }
         });
 
+        // PDF ডাউনলোড লজিক
         document.getElementById('downloadPdfBtn').addEventListener('click', function() {
             const el = document.getElementById('pdfContent');
             const targetName = document.getElementById('rTarget').innerText;
             el.style.backgroundColor = '#ffffff'; el.style.color = '#000000'; 
+            
             html2pdf().set({
                 margin: 0.5, filename: `DMCA_Notice_${targetName}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
