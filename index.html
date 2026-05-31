@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Threat Intel | TRICK A4IF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { background-color: #030712; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(0, 255, 204, 0.2); }
+        .neon-text { color: #00ffcc; text-shadow: 0 0 10px rgba(0, 255, 204, 0.3); }
+        #pdfContent { background-color: #0f172a; color: #fff; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="glass rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-black neon-text"><i class="fa-solid fa-shield-halved"></i> TRICK A4IF INTEL</h1>
+                <p class="text-slate-400 text-xs md:text-sm font-mono mt-1">Authorized by Mohammad Mujahidul Islam</p>
+            </div>
+        </div>
+
+        <!-- Scanner Input -->
+        <div class="glass rounded-2xl p-6">
+            <form id="scanForm" class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="url" required placeholder="Enter Target (e.g., tfxltd.com)" 
+                    class="w-full bg-[#090e17] border border-slate-700 text-[#00ffcc] text-lg rounded-xl px-4 py-3 focus:outline-none focus:border-[#00ffcc]">
+                <button type="submit" id="btn" class="bg-[#00ffcc] text-[#030712] font-bold py-3 px-8 rounded-xl hover:bg-white transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-radar" id="btnIcon"></i> <span id="btnText">SCAN TARGET</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Results Area -->
+        <div id="resultsWrapper" class="hidden space-y-6">
+            <div id="pdfContent" class="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-700 text-sm md:text-base">
+                
+                <h2 class="text-xl font-bold text-sky-400 border-b border-slate-600 pb-2">Target Intelligence Report</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-slate-800 p-4 rounded-xl"><p class="text-xs text-slate-400">Target Host</p><p class="font-bold text-[#00ffcc] break-all" id="rTarget">-</p></div>
+                    <div class="bg-slate-800 p-4 rounded-xl"><p class="text-xs text-slate-400">Origin IP</p><p class="font-mono text-rose-400" id="rIp">-</p></div>
+                    <div class="bg-slate-800 p-4 rounded-xl"><p class="text-xs text-slate-400">ISP Provider</p><p class="font-semibold text-sky-400" id="rIsp">-</p></div>
+                    <div class="bg-slate-800 p-4 rounded-xl"><p class="text-xs text-slate-400">Location</p><p class="font-bold text-purple-400" id="rGeo">-</p></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                        <h4 class="text-slate-300 font-bold mb-3 border-b border-slate-600 pb-2"><i class="fa-solid fa-server"></i> Server Info</h4>
+                        <ul class="space-y-2 text-slate-300">
+                            <li><span class="text-slate-500">Signature:</span> <span id="rServer">-</span></li>
+                            <li><span class="text-slate-500">WAF:</span> <span id="rWaf" class="text-amber-400">-</span></li>
+                            <li><span class="text-slate-500">SSL:</span> <span id="rSslOrg" class="text-emerald-400">-</span> (Exp: <span id="rSslExp">-</span>)</li>
+                            <li><span class="text-slate-500">Open Ports:</span> <span id="rPorts" class="text-rose-400">-</span></li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                        <h4 class="text-slate-300 font-bold mb-3 border-b border-slate-600 pb-2"><i class="fa-solid fa-shield"></i> Security Headers</h4>
+                        <ul class="space-y-2 text-slate-300" id="rSec"></ul>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                    <h4 class="text-slate-300 font-bold mb-3 border-b border-slate-600 pb-2">DNS Records (TXT/MX)</h4>
+                    <div class="bg-slate-900 p-3 rounded-lg text-xs font-mono text-sky-300 overflow-x-auto" id="rDns"></div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-slate-600 text-xs text-slate-500 text-center">
+                    Authorized & Generated by TRICK A4IF Cyber Community.
+                </div>
+            </div>
+
+            <button id="downloadPdfBtn" class="w-full md:w-auto bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('scanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const target = document.getElementById('url').value;
+            const btn = document.getElementById('btn'), text = document.getElementById('btnText'), icon = document.getElementById('btnIcon');
+            
+            document.getElementById('resultsWrapper').classList.add('hidden');
+            btn.disabled = true; text.innerText = 'SCANNING...'; icon.className = 'fa-solid fa-circle-notch fa-spin';
+
+            const formData = new URLSearchParams(); formData.append('url', target);
+
+            try {
+                // Requesting the PHP API deployed on Vercel
+                const res = await fetch('/api/scan.php', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    document.getElementById('rTarget').innerText = data.target;
+                    document.getElementById('rIp').innerText = data.ip;
+                    document.getElementById('rGeo').innerText = data.geo.city + ', ' + data.geo.country;
+                    document.getElementById('rIsp').innerText = data.geo.isp;
+                    document.getElementById('rWaf').innerText = data.cloudflare;
+                    document.getElementById('rServer').innerText = data.server;
+                    document.getElementById('rSslOrg').innerText = data.ssl.issuer;
+                    document.getElementById('rSslExp').innerText = data.ssl.valid;
+                    document.getElementById('rPorts').innerText = data.ports.length > 0 ? data.ports.join(', ') : 'None / Blocked';
+
+                    const secUl = document.getElementById('rSec'); secUl.innerHTML = '';
+                    for (const [key, val] of Object.entries(data.security)) {
+                        secUl.innerHTML += `<li><span class="text-slate-500">${key}:</span> <span class="${val.includes('Missing') ? 'text-rose-400' : 'text-emerald-400'}">${val}</span></li>`;
+                    }
+
+                    document.getElementById('rDns').innerHTML = `<span class="text-slate-400">MX Records:</span><br>${data.dns_mx.join('<br>') || 'None'}<br><br><span class="text-slate-400">TXT Records:</span><br>${data.dns_txt.join('<br>') || 'None'}`;
+                    
+                    document.getElementById('resultsWrapper').classList.remove('hidden');
+                } else { alert(`Error: ${data.message}`); }
+            } catch (err) { alert('Network Error. Ensure backend is running.'); } 
+            finally { btn.disabled = false; text.innerText = 'SCAN TARGET'; icon.className = 'fa-solid fa-radar'; }
+        });
+
+        document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+            const el = document.getElementById('pdfContent');
+            const targetName = document.getElementById('rTarget').innerText;
+            el.style.backgroundColor = '#ffffff'; el.style.color = '#000000'; // Light theme for PDF
+            
+            html2pdf().set({
+                margin: 0.3, filename: `Threat_Intel_${targetName}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            }).from(el).save().then(() => {
+                el.style.backgroundColor = '#0f172a'; el.style.color = '#ffffff';
+            });
+        });
+    </script>
+</body>
+</html>
