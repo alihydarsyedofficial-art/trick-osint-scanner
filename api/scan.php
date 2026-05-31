@@ -1,5 +1,5 @@
 <?php
-// TRICK A4IF - Serverless Threat Intel API (No Dummy Data)
+// TRICK A4IF - Enterprise Threat Intel API (Vercel Safe Edition)
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
@@ -51,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $ports = [80, 443, 21, 22, 3306];
+    // Vercel Firewall Bypass: Only allowed HTTP/HTTPS ports
+    $ports = [80, 443];
     $open_ports = [];
     foreach ($ports as $port) {
         $conn = @fsockopen($ip, $port, $errno, $errstr, 0.2);
